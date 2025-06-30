@@ -1,4 +1,4 @@
-# Install helm
+# Prerequisites
 
 ```bash
 brew install kind
