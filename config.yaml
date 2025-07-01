@@ -4,21 +4,21 @@ kind: Simple
 metadata:
   name: corecraft
 servers: 1
-agents: 2
+agents: 1
 image: docker.io/rancher/k3s:v1.32.6-rc1-k3s1
 kubeAPI:
   hostPort: "6550"
-ports:
-  - port: 9080:80
-    nodeFilters:
-      - loadbalancer
-  - port: 9443:443
-    nodeFilters:
-      - loadbalancer
+# ports:
+#   - port: 80:80
+#     nodeFilters:
+#       - server:*
+#   - port: 443:443
+#     nodeFilters:
+#       - server:*
 registries:
   create:
     name: corecraft-registry
-    hostPort: "12345"
+    hostPort: "1234"
   config: |
     mirrors:
       "corecraft-registry:5000":
@@ -28,7 +28,7 @@ options:
   k3d:
     wait: true
     timeout: 6m0s
-    disableLoadbalancer: false
+    disableLoadbalancer: true
     disableImageVolume: false
     disableRollback: false
   k3s:
@@ -37,6 +37,12 @@ options:
         nodeFilters:
           - server:*
       - arg: --disable=traefik
+        nodeFilters:
+          - server:*
+      - arg: --disable=servicelb
+        nodeFilters:
+          - server:*
+      - arg: --disable=metrics-server
         nodeFilters:
           - server:*
     nodeLabels: []
