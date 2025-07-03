@@ -4,7 +4,7 @@ kind: Simple
 metadata:
   name: corecraft
 servers: 1
-agents: 1
+agents: 2
 image: docker.io/rancher/k3s:v1.32.6-rc1-k3s1
 kubeAPI:
   hostPort: "6550"
@@ -45,4 +45,8 @@ options:
       - arg: --disable=metrics-server
         nodeFilters:
           - server:*
+      - arg: --kubelet-arg=feature-gates=SidecarContainers=true
+        nodeFilters:
+          - server:*
+
     nodeLabels: []

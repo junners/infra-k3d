@@ -28,6 +28,16 @@ cluster:
 	k3d cluster create --config config.yaml
 
 istio:
+# helm upgrade --install istio-base istio/base -n istio-system --create-namespace --set global.platform=k3d --set pilot.env.ENABLE_NATIVE_SIDECARS=true --wait
+# kubectl get crd gateways.gateway.networking.k8s.io &> /dev/null || \
+# 	kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.3.0/standard-install.yaml
+# helm upgrade --install istiod istio/istiod --namespace istio-system --set global.platform=k3d --set pilot.env.ENABLE_NATIVE_SIDECARS=true --wait
+# helm upgrade --install istio-ingressgateway istio/gateway --namespace istio-ingress --create-namespace --set pilot.env.ENABLE_NATIVE_SIDECARS=true --set global.platform=k3d --wait
+# kubectl label namespace default istio-injection=enabled
+	istioctl install --set .values.global.platform=k3d --set .values.pilot.env.ENABLE_NATIVE_SIDECARS=true --set profile=default --skip-confirmation
+	kubectl label namespace default istio-injection=enabled
+
+istio-ambient:
 # kubectl create namespace istio-system --dry-run=client -o yaml | kubectl apply -f -
 # helm upgrade --install istio-cni istio/cni -n istio-system --set profile=ambient --set global.platform=k3d --wait
 # helm upgrade --install istio-base istio/base -n istio-system --wait
