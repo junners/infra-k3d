@@ -9,12 +9,12 @@ image: docker.io/rancher/k3s:v1.32.6-rc1-k3s1
 kubeAPI:
   hostPort: "6550"
 # ports:
-#   - port: 80:80
+#   - port: 8085:80
 #     nodeFilters:
-#       - server:*
+#       - loadbalancer:*
 #   - port: 443:443
 #     nodeFilters:
-#       - server:*
+#       - loadbalancer:*
 registries:
   create:
     name: corecraft-registry
