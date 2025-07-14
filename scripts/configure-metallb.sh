@@ -28,4 +28,4 @@ spec:
 EOF
 
 #set kubeconfig to access the k8s context
-# export KUBECONFIG=$(k3d kubeconfig write $cluster_name)
+export KUBECONFIG=$(k3d kubeconfig write $cluster_name)

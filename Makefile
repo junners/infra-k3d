@@ -1,4 +1,4 @@
-.PHONY: all clean sandbox brew cluster helm istio metallb prereq clean-docker clean-k3d vm-setup vm-up vm-down vm-cleanup kube-config install-helm install-istio istio-k3s
+.PHONY: all clean sandbox brew cluster helm istio metallb prereq clean-docker clean-k3d vm-setup vm-up vm-down vm-cleanup kube-config install-helm install-istio istio-k3s vm-delete lima-clean
 
 # all: cluster metallb istio
 
@@ -17,9 +17,15 @@ vm-down:
 
 vm-clean:
 	$(MAKE) vm-down
-	limactl delete corecraft-lab
+	$(MAKE) vm-delete
 # limactl prune
+	$(MAKE) lima-clean
+
+lima-clean:
 	@rm -rf $(HOME)/.lima/corecraft-lab
+
+vm-delete:
+	limactl delete corecraft-lab
 
 vm-sandbox:
 	$(MAKE) vm-clean

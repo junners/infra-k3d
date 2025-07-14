@@ -1,4 +1,4 @@
-vmType: 'vz'
+vmType: qemu
 rosetta:
   # Enable Rosetta for Linux.
   # Hint: try `softwareupdate --install-rosetta` if Lima gets stuck at `Installing rosetta...`
@@ -9,27 +9,69 @@ rosetta:
 disk: 20GiB
 
 images:
-  - location: 'https://cloud-images.ubuntu.com/releases/24.04/release/ubuntu-24.04-server-cloudimg-amd64.img'
-    arch: 'x86_64'
-  - location: 'https://cloud-images.ubuntu.com/releases/24.04/release/ubuntu-24.04-server-cloudimg-arm64.img'
-    arch: 'aarch64'
+  # - location: 'https://cloud-images.ubuntu.com/releases/24.04/release/ubuntu-24.04-server-cloudimg-amd64.img'
+  #   arch: 'x86_64'
+  - location: "https://cloud-images.ubuntu.com/releases/noble/release-20250704/ubuntu-24.04-server-cloudimg-amd64.img"
+    arch: "x86_64"
+    digest: "sha256:f1652d29d497fb7c623433705c9fca6525d1311b11294a0f495eed55c7639d1f"
+  - location: "https://cloud-images.ubuntu.com/releases/noble/release-20250704/ubuntu-24.04-server-cloudimg-arm64.img"
+    arch: "aarch64"
+    digest: "sha256:bbecbb88100ee65497927ed0da247ba15af576a8855004182cf3c87265e25d35"
+  - location: "https://cloud-images.ubuntu.com/releases/noble/release-20250704/ubuntu-24.04-server-cloudimg-riscv64.img"
+    arch: "riscv64"
+    digest: "sha256:3694a05d426568b8a8d7c8ac57cf55d5b1b1fc03ece48835bdd53a51874a063c"
+  - location: "https://cloud-images.ubuntu.com/releases/noble/release-20250704/ubuntu-24.04-server-cloudimg-armhf.img"
+    arch: "armv7l"
+    digest: "sha256:e2e1780a3785482887ee61b05019a072c343e4dcff5fa5239e3a0696d44d117b"
+  - location: "https://cloud-images.ubuntu.com/releases/noble/release-20250704/ubuntu-24.04-server-cloudimg-s390x.img"
+    arch: "s390x"
+    digest: "sha256:f05c9c41ae23e82340799b0d04a0959b9e71e16526cd91f55188f531ce190c21"
+  - location: "https://cloud-images.ubuntu.com/releases/noble/release-20250704/ubuntu-24.04-server-cloudimg-ppc64el.img"
+    arch: "ppc64le"
+    digest: "sha256:7dc45587dac45028d022eaa56e102eca165dfd4b73fa294f8f2c447da4cc251a"
+  # Fallback to the latest release image.
+  # Hint: run `limactl prune` to invalidate the cache
+
+  - location: https://cloud-images.ubuntu.com/releases/noble/release/ubuntu-24.04-server-cloudimg-amd64.img
+    arch: x86_64
+
+  - location: https://cloud-images.ubuntu.com/releases/noble/release/ubuntu-24.04-server-cloudimg-arm64.img
+    arch: aarch64
+
+  - location: https://cloud-images.ubuntu.com/releases/noble/release/ubuntu-24.04-server-cloudimg-riscv64.img
+    arch: riscv64
+
+  - location: https://cloud-images.ubuntu.com/releases/noble/release/ubuntu-24.04-server-cloudimg-armhf.img
+    arch: armv7l
+
+  - location: https://cloud-images.ubuntu.com/releases/noble/release/ubuntu-24.04-server-cloudimg-s390x.img
+    arch: s390x
+
+  - location: https://cloud-images.ubuntu.com/releases/noble/release/ubuntu-24.04-server-cloudimg-ppc64el.img
+    arch: ppc64le
 mounts:
   - location: './scripts'
-mountType: 'virtiofs'
+# mountType: 'virtiofs'
+mountType: reverse-sshfs
 
 networks:
-  - vzNAT: true
+  # Interface "lima0": shared mode  (IP is assigned by macOS's bootpd)
+  - lima: bridged
+# networks:
+#   bridged:
+#     mode: bridged
+#     interface: eth0
+
+portForwards:
+  - guestPort: 6443  # Kubernetes API server
+    hostPort: 6443
+  - guestPort: 80    # Ingress HTTP
+    hostPort: 8080
+  - guestPort: 443   # Ingress HTTPS
+    hostPort: 8443
 
 hostResolver:
   enabled: true
-
-portForwards:
-  - guestPort: 6443
-    hostPort: 6443
-  - guestPort: 80
-    hostPort: 8080
-  - guestPort: 443
-    hostPort: 8443
 
 containerd:
   system: false
@@ -45,11 +87,7 @@ provision:
               # Extract server IP and token
               SERVER_IP=$(hostname -I | awk '{print $1}')
               NODE_TOKEN=$(sudo cat /var/lib/rancher/k3s/server/node-token)
-
-              curl -sfL https://get.k3s.io | \
-                K3S_URL="https://${SERVER_IP}:6443" \
-                K3S_TOKEN="${NODE_TOKEN}" \
-                sh -
+              curl -sfL https://get.k3s.io | K3S_URL="https://${SERVER_IP}:6443" K3S_TOKEN="${NODE_TOKEN}" sh -
       fi
   - mode: system
     script: |
@@ -62,9 +100,6 @@ provision:
       helm repo add metallb https://metallb.github.io/metallb
       helm repo update
       helm upgrade --install istio-base istio/base -n istio-system --set defaultRevision=default --set pilot.cni.enabled=true --set pilot.env.ENABLE_NATIVE_SIDECAR=true --set pilot.env.PILOT_ENABLE_GATEWAY_API_GATEWAYCLASS_CONTROLLER=true --create-namespace --set global.platform=k3s --set profile=ambient --wait
-      kubectl get crd gateways.gateway.networking.k8s.io &> /dev/null || \
-        kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.3.0/standard-install.yaml
-      
       helm upgrade --install istiod istio/istiod --namespace istio-system --set profile=ambient --set pilot.cni.enabled=true --set pilot.env.ENABLE_NATIVE_SIDECAR=true --set pilot.env.PILOT_ENABLE_GATEWAY_API_GATEWAYCLASS_CONTROLLER=true --set global.platform=k3s --wait
       helm upgrade --install istio-cni istio/cni --namespace istio-system --set profile=ambient --set pilot.cni.enabled=true --set pilot.env.ENABLE_NATIVE_SIDECAR=true --set pilot.env.PILOT_ENABLE_GATEWAY_API_GATEWAYCLASS_CONTROLLER=true --set global.platform=k3s --wait
       kubectl label namespace default istio-injection=enabled
@@ -72,7 +107,25 @@ provision:
   - mode: system
     script: |
       #!/bin/sh
-      SERVER_IP=$(hostname -I | awk '{print $1}')/24
+      export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+      kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.3.0/standard-install.yaml
+  - mode: system
+    script: |
+      #!/bin/sh
+      ufw disable
+  - mode: user
+    script: |
+      #!/bin/bash
+      mkdir -p ~/.kube
+      cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+      sed -i "s/127.0.0.1/$(ip a show eth0 | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)/" ~/.kube/config
+  - mode: system
+    script: |
+      #!/bin/sh
+      SERVER_IP=$(hostname -I | awk '{print $2}')
+      cidr_base_addr=${SERVER_IP%???}
+      ingress_first_addr=$(echo $cidr_base_addr | awk -F'.' '{print $1,$2,$3,240}' OFS='.')
+      ingress_last_addr=$(echo $cidr_base_addr | awk -F'.' '{print $1,$2,$3,255}' OFS='.')
       cat <<EOF | kubectl apply -f -
       apiVersion: metallb.io/v1beta1
       kind: IPAddressPool
@@ -81,14 +134,14 @@ provision:
         namespace: metallb-system
       spec:
         addresses:
-        - $SERVER_IP
+        - $ingress_first_addr-$ingress_last_addr
       EOF
 
       cat <<EOF | kubectl apply -f -
       apiVersion: metallb.io/v1beta1
-      kind: BGPAdvertisement
+      kind: L2Advertisement
       metadata:
-        name: metal-lb-external
+        name: metallb-external
         namespace: metallb-system
       spec:
         ipAddressPools:
