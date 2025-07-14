@@ -80,13 +80,6 @@ metadata:
 spec:
   gatewayClassName: istio
   listeners:
-    - name: http
-      protocol: HTTP
-      port: 80
-      hostname: whoami.apps.corecraft.me
-      allowedRoutes:
-        namespaces:
-          from: Same
     - name: https
       protocol: HTTPS
       port: 443
