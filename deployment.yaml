@@ -25,6 +25,13 @@ spec:
           image: containous/whoami
           ports:
             - containerPort: 80
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
 ---
 apiVersion: v1
 kind: Service
@@ -38,6 +45,33 @@ spec:
     - port: 80
       targetPort: 80
 ---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned
+  namespace: default
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: whoami-cert
+  namespace: demo
+spec:
+  secretName: whoami-tls-secret
+  duration: 8760h  # 1 year
+  renewBefore: 360h
+  subject:
+    organizations:
+      - Corecraft Dev
+  commonName: whoami.apps.corecraft.me
+  dnsNames:
+    - whoami.apps.corecraft.me
+  issuerRef:
+    name: selfsigned
+    kind: ClusterIssuer
+---
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
@@ -49,10 +83,21 @@ spec:
     - name: http
       protocol: HTTP
       port: 80
-      hostname: "whoami.apps.corecraft.me"
+      hostname: whoami.apps.corecraft.me
       allowedRoutes:
         namespaces:
           from: Same
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: whoami.apps.corecraft.me
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: whoami-tls-secret
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute

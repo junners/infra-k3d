@@ -43,6 +43,7 @@ helm:
 	helm repo add istio https://istio-release.storage.googleapis.com/charts || true
 	helm repo add kubernetes-dashboard https://kubernetes.github.io/dashboard/ || true
 	helm repo add metallb https://metallb.github.io/metallb || true
+	helm repo add jetstack https://charts.jetstack.io || true
 	helm repo update
 
 clean: 

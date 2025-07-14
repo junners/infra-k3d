@@ -147,6 +147,13 @@ provision:
         ipAddressPools:
         - local-pool
       EOF
+  - mode: system
+    script: |
+      #!/bin/sh
+      curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+      helm repo add jetstack https://charts.jetstack.io --force-update
+      helm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --set config.apiVersion="controller.config.cert-manager.io/v1alpha1" --set config.kind="ControllerConfiguration" --set config.enableGatewayAPI=true --set crds.enabled=true --create-namespace --wait
 
 probes:
   - script: |
